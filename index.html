@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>Flood Imapct Viewer</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+        <style>
+                html,
+                body,
+                #map {
+                    padding: 0;
+                    margin: 0;
+                    height: 100%;
+                    width: 100%;
+                }
+                #menu {
+                    background-color: #ffffff;
+                    padding: 20px;
+                }
+                #message {
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-size: 16px;
+                    font-weight: bold;
+                    text-align: center;
+                }
+        </style>
+        <link rel="stylesheet" href="//js.arcgis.com/4.6/esri/css/main.css">
+
+        <!-- configure Dojo -->
+        <script type="text/javascript">
+            var package_path = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/'));
+            var dojoConfig = {
+                async: true,
+                // load the api from a CDN and load local modules from the correct location.
+                packages: [{
+                    name: "application",
+                    location: package_path + '/js'
+                }, {
+                    name: "config",
+                    location: package_path + '/config'
+                }, {
+                    name: "arcgis_templates",
+                    location: package_path + '/..'
+                }]
+            };
+
+            // Have to handle a locale parameter before dojo is loaded
+            var urlLocale = location.search.match(/locale=([\w\-]+)/) ? RegExp.$1 : null;
+            if(urlLocale){
+                dojoConfig.locale = urlLocale;
+            }
+        </script>
+        <script src="//js.arcgis.com/4.6/"></script>
+        <script type="text/javascript">
+            require(["application/main", "dojo/domReady!"], function (Main){
+                    // create an instance of main
+                    var myApp = new Main();
+
+                    // fire up the app
+                    myApp.init(); 
+            });
+        </script>
+    </head>
+
+    <!-- html elements for the page -->
+    <body>
+        <div id="map"></div>
+        <div id="menu">
+            <div id="buildingOpacityMessage"></div>
+            <input id="buildingOpacitySlider" type="range" min="0.0" max="1.0" value="0.75" step="0.01" />
+            <div id="waterOpacityMessage"></div>
+            <input id="waterOpacitySlider" type="range" min="0.0" max="1.0" value="0.75" step="0.01" />
+            <div id="SLRSliderMessage"></div>
+            <input id="SLRLevelSlider" type="range" min="0" max="6" value="1" step="1" />
+        </div>
+    </body>
+</html>
