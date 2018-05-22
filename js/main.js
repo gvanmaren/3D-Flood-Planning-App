@@ -39,6 +39,7 @@ define([
     "esri/layers/SceneLayer",
     "esri/layers/TileLayer",
     "esri/layers/GroupLayer",
+    "esri/layers/ElevationLayer",
     "esri/renderers/SimpleRenderer",
     "esri/symbols/MeshSymbol3D",
     "esri/widgets/BasemapToggle",
@@ -52,6 +53,7 @@ define([
     SceneLayer,
     TileLayer,
     GroupLayer,
+    ElevationLayer,
     SimpleRenderer,
     MeshSymbol3D,
     BasemapToggle
@@ -78,47 +80,84 @@ define([
 
             /* define the logic of the welcome module */
             init: function () {
-
                 this.startApp();
-
-
             },
 
-            /* create UI for the welcome page */
             startApp: function () {
+
+                /* water symbol */
+                var waterRenderer = {
+                    type: "simple", // autocasts as new SimpleRenderer()
+                    symbol: {
+                      type: "mesh-3d", // autocasts as new MeshSymbol3D()
+                      symbolLayers: [{
+                        type: "fill", // autocasts as new FillSymbol3DLayer()
+                        material: {
+                          color: "#4CA3FF",
+                          colorMixMode: "replace"
+                        }
+                      }]
+                    }
+                  };
+
+                // Create new map
+                my_map = new Map({
+                    basemap: "dark-gray",
+                    ground: "world-elevation",
+                    layers: [
+                        new SceneLayer({
+                            id: "buildings",
+                            //url: "https://tiles.arcgis.com/tiles/Imiq6naek6ZWdour/arcgis/rest/services/MDC_Bldgs3D_SLR/SceneServer"
+                            //url: "https://tiles.arcgis.com/tiles/kNxiwRZHjxrUW86Z/arcgis/rest/services/MDCSLRBuildings/SceneServer"
+                            //url: "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_Buildings_test_area1/SceneServer"
+                            url: "https://services7.arcgis.com/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_SLR/SceneServer"
+                            //url: "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_buildings_slr2/SceneServer"
+                        }),
+                        new GroupLayer({
+                            id: "coast",
+                            layers: [
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_0f_3D/SceneServer",
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_1f_3D/SceneServer",
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_2f_3D/SceneServer",
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_3f_3D/SceneServer",
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_4f_3D/SceneServer",
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_5f_3D/SceneServer",
+                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_6f_3D/SceneServer"].map(function (element) {
+                                return new SceneLayer({
+                                    url: element,
+                                    opacity: 0,
+                                    renderer: waterRenderer
+                                })
+                            })
+                        })
+                    ]
+                });
+
+                var elevLyr = new ElevationLayer({
+                    // Custom elevation service
+                    url: "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Depth_SLR6ft_min10/ImageServer"
+                  });
+                  // Add elevation layer to the map's ground.
+                  my_map.ground.layers.add(elevLyr);
+
                 // Create the SceneView and Map
                 var view = new SceneView({
                     container: "map",
-                    map: new Map({
-                        basemap: "dark-gray",
-                        ground: "world-elevation",
-                        layers: [
-                            new SceneLayer({
-                                id: "buildings",
-                                //url: "https://tiles.arcgis.com/tiles/Imiq6naek6ZWdour/arcgis/rest/services/MDC_Bldgs3D_SLR/SceneServer"
-                                url: "https://tiles.arcgis.com/tiles/kNxiwRZHjxrUW86Z/arcgis/rest/services/MDCSLRBuildings/SceneServer"
-                            }),
-                            new GroupLayer({
-                                id: "coast",
-                                layers: ["http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_0ft/MapServer",
-                                    "http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_1ft/MapServer",
-                                    "http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_2ft/MapServer",
-                                    "http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_3ft/MapServer",
-                                    "http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_4ft/MapServer",
-                                    "http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_5ft/MapServer",
-                                    "http://tiles.arcgis.com/tiles/C8EMgrsFcRFL6LrL/arcgis/rest/services/slr_6ft/MapServer"].map(function (e) {
-                                    return new TileLayer({
-                                        url: e,
-                                        opacity: 0
-                                    })
-                                })
-                            })
-                        ]
-                    })
+                    map: my_map,
+                    environment: {
+                        atmosphere: { // creates a realistic view of the atmosphere
+                            quality: "high"
+                        },
+                        lighting: {
+                            date: new Date("Sun Mar 15 2015 09:00:00 GMT-0500 (CET)"),
+                            directShadowsEnabled: true,
+                            cameraTrackingEnabled: false
+                        }
+                      },
                 });
                 
                 // Configure UI listeners
-                view.then(function () {
+                view.when(function () {
                     // Update map when floodLevelSlider changes
                     on(dom.byId("SLRLevelSlider"), "change", function () {
                         highlightBuildings();
@@ -133,6 +172,13 @@ define([
                     on(dom.byId("waterOpacitySlider"), "change", function () {
                         updateWaterOpacity();
                     });
+
+                    // Update time
+                    on(dom.byId("timeOfDaySelect"), "change", updateTimeOfDay);
+
+                    // Update shadows
+                    on(dom.byId("directShadowsInput"), "change", updateDirectShadows);
+
                 });
                 
                 // When the building layer has loaded
@@ -164,7 +210,7 @@ define([
                     view: view,           // view that provides access to the map's 'topo' basemap
                     nextBasemap: "hybrid" // allows for toggling to the 'hybrid' basemap
                 });
-                view.ui.add(basemapToggle,"top-right");
+                view.ui.add(basemapToggle,"bottom-right");
                 view.ui.add("menu", "bottom-left");
 
                 function highlightBuildings() {
@@ -175,14 +221,27 @@ define([
                     var floodSliderValue = Number(dom.byId("SLRLevelSlider").value);
                     
                     // Create the renderer and configure visual variables
-                    
                     view.map.findLayerById("buildings").renderer = new SimpleRenderer({
-                        symbol: new MeshSymbol3D(),
+                        symbol: {
+                            type: "mesh-3d",
+                            symbolLayers: [{
+                                type: "fill",
+                                material: {
+                                    color: "#ffffff",
+                                    colorMixMode: "replace"
+                                },
+                                edges: {
+                                    type: "solid", // autocasts as new SolidEdges3D()
+                                    color: [50, 50, 50, 0.5],
+                                    size: 1
+                                }        
+                            }],
+                        },
                         visualVariables: [{
                             // Set Opacity
                             // specifies a visual variable of continuous color
                             type: "color",
-                            field: "SLRLevel",
+                            field: "NOAA_SeaLevelRise_Flooding_SLR",
                             // Color ramp from white to red buildings impacted by SLR will be
                             // assigned a color proportional to the min and max colors specified below
                             // Values for Sea LevelRise SliderSlider for Sea Level Rise
@@ -214,10 +273,14 @@ define([
                             }]
                         }]
                     });
-                    
+
                     // Update FloodLayer
                     view.map.findLayerById("coast").layers.forEach(function (e, i) {
                         e.opacity = i === floodSliderValue ? 1 : 0;
+
+                        //console.log(i)
+                        //console.log(floodSliderValue)
+                        //console.log(e.opacity)
                     });
 
                     // Update UI
@@ -237,17 +300,18 @@ define([
                     view.map.findLayerById("buildings").opacity = opacity;
                     html.set(dom.byId("buildingOpacityMessage"), "Building Opacity: " + opacity);
                 }
+
+                // Create the event's callback functions
+                function updateTimeOfDay(ev) {
+                    var select = ev.target;
+                    var date = select.options[select.selectedIndex].value;
+
+                    view.environment.lighting.date = new Date(date);
+                }
+
+                function updateDirectShadows(ev) {
+                    view.environment.lighting.directShadowsEnabled = !!ev.target.checked;
+                }    
             },
         });
     });
-
-
-function getJsonFromUrl() {
-    var query = location.search.substr(1);
-    var result = {};
-    query.split("&").forEach(function (part) {
-        var item = part.split("=");
-        result[item[0]] = decodeURIComponent(item[1]);
-    });
-    return result;
-}
