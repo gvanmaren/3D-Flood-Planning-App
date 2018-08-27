@@ -35,6 +35,7 @@ define([
     "dojo/on",
 
     "esri/Map",
+    "esri/WebScene",
     "esri/views/SceneView",
     "esri/layers/SceneLayer",
     "esri/layers/TileLayer",
@@ -43,12 +44,16 @@ define([
     "esri/renderers/SimpleRenderer",
     "esri/symbols/MeshSymbol3D",
     "esri/widgets/BasemapToggle",
+    "esri/widgets/Search",
+    "esri/widgets/Expand"
+
 ], function (
     declare,
     html,
     dom,
     on,
     Map,
+    WebScene, 
     SceneView,
     SceneLayer,
     TileLayer,
@@ -56,21 +61,24 @@ define([
     ElevationLayer,
     SimpleRenderer,
     MeshSymbol3D,
-    BasemapToggle
+    BasemapToggle,
+    Search,
+    Expand
 ) {
-        // application settings
+        // temporary application settings
+        // TODO: load via congif file
         var settings_demo = {
-            name: "Demo",
-            url: "http://zurich.maps.arcgis.com",           // portal URL for config
-            webscene: "0af10b5e35ed4a5bbe095aa76b14b786",   // portal item ID of the webscene
-            usagename: "usage",                             // usage attribute (string)
-            floorname: "floorID",                           // floor attribute (int)
-            OIDname: "OBJECTID",                            // objectid
-            buildingIDname: "buildingID",                   // building attribute (int)
-            areaname: "unitarea",                           // area attribute (float)
+            name: "Demo Sea Level Rise Flooding",
+            url: "http://awesome3d.maps.arcgis.com",                    // portal URL for config
+            webscene: "ec8a197abf8b41f5b759c5c6e352f6c2",               // portal item ID of the webscene
+            buildingLayerName: "Baltimore Buildings SLR",               // name of the buildng layer in the webscene
+            floodlevelGroupLayerName: "Flood levels",                   // name of the buildng layer in the webscene
+            level_name: "SLR_table_SLRLevel",                           // SLR level attribute (int)
+            damage_name: "NOAA_SeaLevelRise_Flooding_damage",           // to fix: damage estimate attribute (float)
+            OIDname: "NOAA_SeaLevelRise_Flooding_OBJECTID",             // to fix: objectid (int)
+            buildingIDname: "NOAA_SeaLevelRise_Flooding_buildingID"     // to fix: building FID (string)
         };
-    
-    
+        
         return declare(null, {
 
             /* contructor method so we can use this key word */
@@ -78,13 +86,8 @@ define([
                 
             },
 
-            /* define the logic of the welcome module */
+            /* */
             init: function () {
-                this.startApp();
-            },
-
-            startApp: function () {
-
                 /* water symbol */
                 var waterRenderer = {
                     type: "simple", // autocasts as new SimpleRenderer()
@@ -100,50 +103,22 @@ define([
                     }
                   };
 
-                // Create new map
-                my_map = new Map({
-                    basemap: "dark-gray",
-                    ground: "world-elevation",
-                    layers: [
-                        new SceneLayer({
-                            id: "buildings",
-                            //url: "https://tiles.arcgis.com/tiles/Imiq6naek6ZWdour/arcgis/rest/services/MDC_Bldgs3D_SLR/SceneServer"
-                            //url: "https://tiles.arcgis.com/tiles/kNxiwRZHjxrUW86Z/arcgis/rest/services/MDCSLRBuildings/SceneServer"
-                            //url: "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_Buildings_test_area1/SceneServer"
-                            url: "https://services7.arcgis.com/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_SLR/SceneServer"
-                            //url: "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_buildings_slr2/SceneServer"
-                        }),
-                        new GroupLayer({
-                            id: "coast",
-                            layers: [
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_0f_3D/SceneServer",
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_1f_3D/SceneServer",
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_2f_3D/SceneServer",
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_3f_3D/SceneServer",
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_4f_3D/SceneServer",
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_5f_3D/SceneServer",
-                                "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Baltimore_test_area1_slr_6f_3D/SceneServer"].map(function (element) {
-                                return new SceneLayer({
-                                    url: element,
-                                    opacity: 0,
-                                    renderer: waterRenderer
-                                })
-                            })
-                        })
-                    ]
+                // get settings from choice on welcome page
+                this.settings = this.getSettingsFromUser();
+
+                // load scene with portal ID
+                this.scene = new WebScene({
+                    portalItem: {
+                        id: this.settings.webscene
+                    },
+                    basemap: "topo"
                 });
 
-                var elevLyr = new ElevationLayer({
-                    // Custom elevation service
-                    url: "https://tiles.arcgis.com/tiles/wdgKFvvZvYZ3Biji/arcgis/rest/services/Depth_SLR6ft_min10/ImageServer"
-                  });
-                  // Add elevation layer to the map's ground.
-                  my_map.ground.layers.add(elevLyr);
-
                 // Create the SceneView and Map
-                var view = new SceneView({
+                view = new SceneView({
                     container: "map",
-                    map: my_map,
+                    map: this.scene,
+                    basemap: "satellite",
                     environment: {
                         atmosphere: { // creates a realistic view of the atmosphere
                             quality: "high"
@@ -155,7 +130,36 @@ define([
                         }
                       },
                 });
-                
+
+                // Add sea level rise menu and basemap toggle
+                var basemapToggle = new BasemapToggle({
+                    view: view,           // view that provides access to the map's 'topo' basemap
+                    container: document.createElement("basemap_div"),
+                    nextBasemap: "hybrid" // allows for toggling to the 'hybrid' basemap
+                });
+
+                view.ui.add("menu", "bottom-left");
+
+                // create search widget
+                var searchWidget = new Search({
+                    view: view,
+                    container: document.createElement("search_div")
+                });
+
+                view.ui.add([
+                    {
+                        component: searchWidget,
+                        position: "bottom-right",
+                        index: 0
+                    }, {
+                        component: basemapToggle,
+                        position: "bottom-right",
+                        index: 1
+                    }
+                ]);
+
+                var _this = this
+
                 // Configure UI listeners
                 view.when(function () {
                     // Update map when floodLevelSlider changes
@@ -179,49 +183,65 @@ define([
                     // Update shadows
                     on(dom.byId("directShadowsInput"), "change", updateDirectShadows);
 
-                });
-                
-                // When the building layer has loaded
-                view.map.findLayerById("buildings").on("layerview-create", function(e){
-                    // Update building renderer and transparency.
-                    highlightBuildings();
-                    updateBuildingOpacity();
-                    
-                    // Set extent to entire building layer.
-                    view.extent= e.layerView.layer.fullExtent;
-                    
-                    // Animate the view to that it tilts over 2.5 seconds
-                    view.goTo({
-                        tilt: 60
-                    },{
-                        duration: 2500
+                    // When the building layer has loaded: find it and set the ID               
+                    var buildingLayer = view.map.allLayers.find(function(l) {
+                        return l.title === settings_demo.buildingLayerName;
                     });
-                });
-                
-                // When the water layer has loaded
-                view.map.findLayerById("coast").on("layerview-create", function(e){
-                    // Update water transparency
-                    updateWaterOpacity();
-                });
-                
 
-                // Add sea level rise menu and basemap toggle
-                var basemapToggle = new BasemapToggle({
-                    view: view,           // view that provides access to the map's 'topo' basemap
-                    nextBasemap: "hybrid" // allows for toggling to the 'hybrid' basemap
-                });
-                view.ui.add(basemapToggle,"bottom-right");
-                view.ui.add("menu", "bottom-left");
+                    buildingLayer.id = "my_buildings"
 
-                function highlightBuildings() {
+                    var floodlevelsGroupLayer = view.map.allLayers.find(function(l) {
+                        return l.title === settings_demo.floodlevelGroupLayerName;
+                    });
+
+                    // When the flood level group layer has loaded: find it and set the ID  
+                    floodlevelsGroupLayer.id = "my_flood_levels"
+
+                    // set flo0d levels water renderer
+                    var flood_levels = view.map.findLayerById("my_flood_levels");
+
+                    flood_levels.layers.forEach(element => {
+                        element.renderer = waterRenderer;            
+                    });
+
+                    // when buildings have loaded...
+                    buildingLayer.on("layerview-create", function(e){
+                        // Update building renderer and transparency.
+                        highlightBuildings(buildingLayer);
+                        updateBuildingOpacity(buildingLayer);
+                        
+                        // Set extent to entire building layer.
+                        view.extent= e.layerView.layer.fullExtent;
+                        
+                        // Animate the view to that it tilts over 2.5 seconds
+                        view.goTo({
+                            tilt: 60
+                        },{
+                            duration: 2500
+                        });
+                    });
+                    
+                    // When the water layer has loaded
+                    view.map.findLayerById("my_flood_levels").on("layerview-create", function(e){
+                        // Update water transparency
+                        updateWaterOpacity();
+                    }); 
+                    
+                }.bind(this)).otherwise(function (err) {
+                    console.error(err);
+                });
+
+                // functions that are called when layers have loaded / user changes sliders
+                function highlightBuildings(localLayer) {
                     //
                     var HIGHTLIGHTED = "#FF0000";
                     var NOT_HIGHTLIGHTED = "#FFFFFF";
                     // Slider value
                     var floodSliderValue = Number(dom.byId("SLRLevelSlider").value);
-                    
+
                     // Create the renderer and configure visual variables
-                    view.map.findLayerById("buildings").renderer = new SimpleRenderer({
+                    theLayer = view.map.findLayerById("my_buildings"); 
+                    theLayer.renderer = new SimpleRenderer({
                         symbol: {
                             type: "mesh-3d",
                             symbolLayers: [{
@@ -241,7 +261,7 @@ define([
                             // Set Opacity
                             // specifies a visual variable of continuous color
                             type: "color",
-                            field: "NOAA_SeaLevelRise_Flooding_SLR",
+                            field: settings_demo.level_name,
                             // Color ramp from white to red buildings impacted by SLR will be
                             // assigned a color proportional to the min and max colors specified below
                             // Values for Sea LevelRise SliderSlider for Sea Level Rise
@@ -275,12 +295,13 @@ define([
                     });
 
                     // Update FloodLayer
-                    view.map.findLayerById("coast").layers.forEach(function (e, i) {
+                    view.map.findLayerById("my_flood_levels").layers.forEach(function (e, i) {
                         e.opacity = i === floodSliderValue ? 1 : 0;
 
-                        //console.log(i)
-                        //console.log(floodSliderValue)
-                        //console.log(e.opacity)
+                        // console.log("counter: " + i)
+                        // console.log("slider value: " + floodSliderValue)
+                        // console.log("opacity: " + e.opacity)
+                        // console.log("layer name: " + e.title)
                     });
 
                     // Update UI
@@ -290,14 +311,14 @@ define([
                 // Update water transparency
                 function updateWaterOpacity(){
                     var opacity = Number(dom.byId("waterOpacitySlider").value);
-                    view.map.findLayerById("coast").opacity = opacity;
+                    view.map.findLayerById("my_flood_levels").opacity = opacity;
                     html.set(dom.byId("waterOpacityMessage"), "Water Opacity: " + opacity);
                 }
                 
                 // Update building transparency
                 function updateBuildingOpacity(){
                     var opacity = Number(dom.byId("buildingOpacitySlider").value);
-                    view.map.findLayerById("buildings").opacity = opacity;
+                    view.map.findLayerById("my_buildings").opacity = opacity;
                     html.set(dom.byId("buildingOpacityMessage"), "Building Opacity: " + opacity);
                 }
 
@@ -313,5 +334,9 @@ define([
                     view.environment.lighting.directShadowsEnabled = !!ev.target.checked;
                 }    
             },
+
+            getSettingsFromUser: function (settings) {
+                return settings_demo;
+            }            
         });
     });
