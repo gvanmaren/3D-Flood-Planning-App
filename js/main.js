@@ -71,12 +71,14 @@ define([
             name: "Demo Sea Level Rise Flooding",
             url: "http://awesome3d.maps.arcgis.com",                    // portal URL for config
             webscene: "ec8a197abf8b41f5b759c5c6e352f6c2",               // portal item ID of the webscene
-            buildingLayerName: "Baltimore Buildings SLR",               // name of the buildng layer in the webscene
-            floodlevelGroupLayerName: "Flood levels",                   // name of the buildng layer in the webscene
-            level_name: "SLR_table_SLRLevel",                           // SLR level attribute (int)
-            damage_name: "NOAA_SeaLevelRise_Flooding_damage",           // to fix: damage estimate attribute (float)
-            OIDname: "NOAA_SeaLevelRise_Flooding_OBJECTID",             // to fix: objectid (int)
-            buildingIDname: "NOAA_SeaLevelRise_Flooding_buildingID"     // to fix: building FID (string)
+            buildingLayerName: "Baltimore Buildings SLR 2",             // name of the building layer in the webscene
+            floodlevelGroupLayerName: "Flood levels",                   // name of the flood levl group layer in the webscene
+            OIDname: "Buildings_3D_Unique_ID",                          // unique objectid (int)
+            flood_risk: "SLR"                                           // flood risk that was calculated
+            level_name: "Slider",                                       // SLR slider attribute (int)
+            area_name: "AREA"                                           // Flooded area per flood level (float)
+            damage_name: "LossPotential",                               // loss potential per flood level (float)
+            mean_name: "MEAN"                                           // average flood depth per flood level (float)
         };
         
         return declare(null, {
