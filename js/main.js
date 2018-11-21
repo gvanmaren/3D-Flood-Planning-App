@@ -66,7 +66,7 @@ define([
     Expand
 ) {
         // temporary application settings
-        // TODO: load via congif file
+        // TODO: load via config file
         var settings_demo = {
             name: "Demo Sea Level Rise Flooding",
             url: "http://awesome3d.maps.arcgis.com",                    // portal URL for config
@@ -74,9 +74,9 @@ define([
             buildingLayerName: "Baltimore Buildings SLR 2",             // name of the building layer in the webscene
             floodlevelGroupLayerName: "Flood levels",                   // name of the flood levl group layer in the webscene
             OIDname: "Buildings_3D_Unique_ID",                          // unique objectid (int)
-            flood_risk: "SLR"                                           // flood risk that was calculated
+            flood_risk: "SLR",                                          // flood risk that was calculated
             level_name: "Slider",                                       // SLR slider attribute (int)
-            area_name: "AREA"                                           // Flooded area per flood level (float)
+            area_name: "AREA",                                          // Flooded area per flood level (float)
             damage_name: "LossPotential",                               // loss potential per flood level (float)
             mean_name: "MEAN"                                           // average flood depth per flood level (float)
         };
@@ -263,7 +263,7 @@ define([
                             // Set Opacity
                             // specifies a visual variable of continuous color
                             type: "color",
-                            field: settings_demo.level_name,
+                            field: settings_demo.flood_risk+settings_demo.level_name,
                             // Color ramp from white to red buildings impacted by SLR will be
                             // assigned a color proportional to the min and max colors specified below
                             // Values for Sea LevelRise SliderSlider for Sea Level Rise
